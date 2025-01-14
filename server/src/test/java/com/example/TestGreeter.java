@@ -12,7 +12,7 @@ public class TestGreeter {
 
   private Greeter greeter;
 
-  @Before
+  @Before //Enes
   public void setup() {
     greeter = new Greeter();
   }
