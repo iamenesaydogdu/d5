@@ -1,8 +1,4 @@
-# Maven
-# Build your Java project and run tests with Apache Maven.
-# Add steps that analyze code, save build artifacts, deploy, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/java
-
+# Azure DevOps Pipeline YAML File for Maven Build and ChromeDriver Setup
 trigger:
 - master
 
@@ -17,24 +13,16 @@ steps:
     sudo apt-get install -y unzip curl
   displayName: 'Install Dependencies'
 
-# Step 2: Detect Chrome version and download ChromeDriver
+# Step 2: Download a fixed ChromeDriver version
 - script: |
-    echo "Detecting Chrome version..."
-    CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d'.' -f1)
-    echo "Detected Chrome major version: $CHROME_VERSION"
-
-    echo "Fetching matching ChromeDriver version..."
-    CHROMEDRIVER_VERSION=$(curl -s https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION})
-    echo "Matched ChromeDriver version: $CHROMEDRIVER_VERSION"
-
-    echo "Downloading ChromeDriver..."
-    curl -O https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip
+    echo "Downloading ChromeDriver version 114.0.5735.90..."
+    curl -O https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_linux64.zip
     unzip chromedriver_linux64.zip
     chmod +x chromedriver
     sudo mv chromedriver /usr/local/bin/
   displayName: 'Download and Setup ChromeDriver'
 
-# Step 3: Run Maven build
+# Step 3: Run Maven Build
 - task: Maven@3
   inputs:
     mavenPomFile: 'pom.xml'
@@ -47,14 +35,14 @@ steps:
     goals: 'package'
   displayName: 'Run Maven Build'
 
-# Step 4: Copy WAR files
+# Step 4: Copy WAR Files
 - task: CopyFiles@2
   inputs:
     Contents: '**/*.war'
     TargetFolder: '$(build.artifactstagingdirectory)'
   displayName: 'Copy WAR Files'
 
-# Step 5: Publish build artifacts
+# Step 5: Publish Build Artifacts
 - task: PublishBuildArtifacts@1
   inputs:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)'
