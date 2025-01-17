@@ -11,12 +11,27 @@ pool:
 
 steps:
 - script: |
+    echo "Installing dependencies..."
+    sudo apt-get update
+    sudo apt-get install -y unzip curl
+  displayName: 'Install Dependencies'
+
+# Step 2: Detect Chrome version and download ChromeDriver
+- script: |
     echo "Detecting Chrome version..."
-    CHROME_VERSION=$(google-chrome --version | grep -o '[0-9]*' | head -1)
+    CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d'.' -f1)
+    echo "Detected Chrome major version: $CHROME_VERSION"
+
+    echo "Fetching matching ChromeDriver version..."
     CHROMEDRIVER_VERSION=$(curl -s https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION})
-    curl -O https://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver_mac64.zip
-    unzip chromedriver_mac64.zip -d $(System.DefaultWorkingDirectory)
-  displayName: 'Download ChromeDriver'
+    echo "Matched ChromeDriver version: $CHROMEDRIVER_VERSION"
+
+    echo "Downloading ChromeDriver..."
+    curl -O https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip
+    unzip chromedriver_linux64.zip
+    chmod +x chromedriver
+    sudo mv chromedriver /usr/local/bin/
+  displayName: 'Download and Setup ChromeDriver'
 - task: Maven@3
   inputs:
     mavenPomFile: 'pom.xml'
