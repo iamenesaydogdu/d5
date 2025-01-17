@@ -1,4 +1,3 @@
-# Azure DevOps Pipeline YAML File for Maven Build and ChromeDriver Setup
 trigger:
 - master
 
@@ -6,23 +5,30 @@ pool:
   vmImage: ubuntu-latest
 
 steps:
-# Step 1: Install dependencies
 - script: |
     echo "Installing dependencies..."
     sudo apt-get update
     sudo apt-get install -y unzip curl
   displayName: 'Install Dependencies'
 
-# Step 2: Download a fixed ChromeDriver version
+# Step 2: Detect Chrome version and download ChromeDriver
 - script: |
-    echo "Downloading ChromeDriver version 114.0.5735.90..."
-    curl -O https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_linux64.zip
+    echo "Detecting Chrome version..."
+    sudo apt-get install -y google-chrome-stable
+    CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d'.' -f1)
+    echo "Detected Chrome major version: $CHROME_VERSION"
+
+    echo "Fetching matching ChromeDriver version..."
+    CHROMEDRIVER_VERSION=$(curl -s https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION})
+    echo "Matched ChromeDriver version: $CHROMEDRIVER_VERSION"
+
+    echo "Downloading ChromeDriver..."
+    curl -O https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip
     unzip chromedriver_linux64.zip
     chmod +x chromedriver
     sudo mv chromedriver /usr/local/bin/
   displayName: 'Download and Setup ChromeDriver'
 
-# Step 3: Run Maven Build
 - task: Maven@3
   inputs:
     mavenPomFile: 'pom.xml'
@@ -32,20 +38,13 @@ steps:
     jdkArchitectureOption: 'x64'
     publishJUnitResults: true
     testResultsFiles: '**/surefire-reports/TEST-*.xml'
-    goals: 'package'
-  displayName: 'Run Maven Build'
-
-# Step 4: Copy WAR Files
+    goals: 'clean test'
 - task: CopyFiles@2
   inputs:
     Contents: '**/*.war'
     TargetFolder: '$(build.artifactstagingdirectory)'
-  displayName: 'Copy WAR Files'
-
-# Step 5: Publish Build Artifacts
 - task: PublishBuildArtifacts@1
   inputs:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)'
     ArtifactName: 'warfile'
     publishLocation: 'Container'
-  displayName: 'Publish Build Artifacts'
