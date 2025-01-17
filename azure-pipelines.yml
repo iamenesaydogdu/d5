@@ -10,6 +10,13 @@ pool:
   vmImage: ubuntu-latest
 
 steps:
+- script: |
+    echo "Detecting Chrome version..."
+    CHROME_VERSION=$(google-chrome --version | grep -o '[0-9]*' | head -1)
+    CHROMEDRIVER_VERSION=$(curl -s https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION})
+    curl -O https://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver_mac64.zip
+    unzip chromedriver_mac64.zip -d $(System.DefaultWorkingDirectory)
+  displayName: 'Download ChromeDriver'
 - task: Maven@3
   inputs:
     mavenPomFile: 'pom.xml'
