@@ -10,6 +10,7 @@ pool:
   vmImage: ubuntu-latest
 
 steps:
+# Step 1: Install dependencies
 - script: |
     echo "Installing dependencies..."
     sudo apt-get update
@@ -32,6 +33,8 @@ steps:
     chmod +x chromedriver
     sudo mv chromedriver /usr/local/bin/
   displayName: 'Download and Setup ChromeDriver'
+
+# Step 3: Run Maven build
 - task: Maven@3
   inputs:
     mavenPomFile: 'pom.xml'
@@ -42,12 +45,19 @@ steps:
     publishJUnitResults: true
     testResultsFiles: '**/surefire-reports/TEST-*.xml'
     goals: 'package'
+  displayName: 'Run Maven Build'
+
+# Step 4: Copy WAR files
 - task: CopyFiles@2
   inputs:
     Contents: '**/*.war'
     TargetFolder: '$(build.artifactstagingdirectory)'
+  displayName: 'Copy WAR Files'
+
+# Step 5: Publish build artifacts
 - task: PublishBuildArtifacts@1
   inputs:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)'
     ArtifactName: 'warfile'
     publishLocation: 'Container'
+  displayName: 'Publish Build Artifacts'
